@@ -129,23 +129,35 @@ class Blockchain {
         let self = this;
         return new Promise(async (resolve, reject) => {
             let error = false;
+            let errMessage = "";
             let msg_time = parseInt(message.split(':')[1]);
             let current_time = parseInt(new Date().getTime().toString().slice(0, -3));
             let elapsed_time = current_time - msg_time;
-            if (!error) {
-                bitcoinMessage.verify(message, address, signature);
-                let starData = {
-                    "star": {
-                        "dec": "68° 52' 56.9",
-                        "ra": "16h 29m 1.0s",
-                        "story": "Testing the story 4"
-                    }
-                };
-                let block = new BlockClass.Block(starData);
-                self._addBlock(block);
-                resolve(`height:${self.height}`);
+            if (elapsed_time > 3000000000) {
+                error = true;
+                errMessage = "Timeout";
+                reject(errMessage);
             } else {
-                reject("nokay");
+                if (bitcoinMessage.verify(message, address, signature)) {
+                    let starData = {
+                        "message":`${message}`,
+                        "address":`${address}`,
+                        "signature":`${signature}`,
+                        "star": {
+                            "dec": "68° 52' 56.9",
+                            "ra": "16h 29m 1.0s",
+                            "story": "Testing the story 4"
+                        }
+                    };
+                    let block = new BlockClass.Block(starData);
+                    self._addBlock(block);
+                    console.log(`Adding block: ${self.height}`);
+                    resolve(block);
+                    console.log(block);
+                } else {
+                    errMessage = "Message failed verification.";
+                    reject(errMessage);
+                }
             }
         });
     }
@@ -163,7 +175,9 @@ class Blockchain {
             let height = self.height;
             let block = self.chain[height];
             let found = false;
+            console.log(`getting block by hash:\n${hash}`);
             for (;height >= 0 && !found;) {
+                console.log(`block #${height}`);
                 if (hash === block.hash) {
                     found = true;
                 } else {
@@ -171,12 +185,11 @@ class Blockchain {
                     block = self.chain[height];
                 }
             }
+            console.log('tried all blocks');
             if (!error && found) {
-                console.log('found');
-                console.log(hex2ascii(block.body));
-                resolve(block.hash);
+                resolve(block);
             } else {
-                reject("not found");
+                resolve(false);
             };
         });
     }
