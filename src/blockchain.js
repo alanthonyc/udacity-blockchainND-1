@@ -11,6 +11,7 @@
 const SHA256 = require('crypto-js/sha256');
 const BlockClass = require('./block.js');
 const bitcoinMessage = require('bitcoinjs-message');
+const hex2ascii = require('hex2ascii');
 
 class Blockchain {
 
@@ -186,6 +187,7 @@ class Blockchain {
                 }
             }
             console.log('tried all blocks');
+            self.validateChain();//temp
             if (!error && found) {
                 resolve(block);
             } else {
@@ -225,16 +227,21 @@ class Blockchain {
             let height = self.height;
             let block = self.chain[height];
             let found = false;
-            for (;height >= 0;) {
+            console.log(`getting stars by wallet: ${address}`);
+            for (;height > 0;) {
+                let decoded_body = hex2ascii(block.body);
+                let body_data = JSON.parse(decoded_body);
+                let body_wallet = body_data.address;
+                if (body_wallet === address) {
+                    stars[stars.length] = block;
+                };
                 height -= 1;
                 block = self.chain[height];
             }
-            if (!error && found) {
-                console.log('found');
-                console.log(hex2ascii(block.body));
-                resolve(block.hash);
+            if (!error) {
+                resolve(stars);
             } else {
-                reject("not found");
+                reject("Error retrieving stars.");
             };
             
         });
@@ -250,7 +257,25 @@ class Blockchain {
         let self = this;
         let errorLog = [];
         return new Promise(async (resolve, reject) => {
-            
+            let error = false;
+            let height = self.height;
+            let block = self.chain[height];
+            console.log('validating blockchain');
+            for (;height > 0;) {
+                console.log(`block #${height}`);
+                console.log(`hash: ${block.hash}`);
+                console.log(`previous block hash: ${block.previousBlockHash}`);
+                block.validate().then (
+                    function(val) { 
+                        console.log(`okay(${height})`); 
+                        console.log(errorLog);
+                    },
+                    function(err) { console.log("nokay"); }
+                );
+                height -= 1;
+                block = self.chain[height];
+            }
+            resolve();
         });
     }
 
