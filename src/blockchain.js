@@ -77,6 +77,7 @@ class Blockchain {
                 block.height = self.height + 1;
                 block.previousBlockHash = self.chain[self.height].hash;
             }
+            console.log(`adding block, body:\n${block.body}`);
             block.hash = SHA256(JSON.stringify(block.body)).toString();
             block.time = new Date().getTime().toString().slice(0,-3);
             self.chain[self.chain.length] = block;
@@ -145,9 +146,9 @@ class Blockchain {
                         "address":`${address}`,
                         "signature":`${signature}`,
                         "star": {
-                            "dec": "68° 52' 56.9",
-                            "ra": "16h 29m 1.0s",
-                            "story": "Testing the story 4"
+                            "dec": star.dec,
+                            "ra": star.ra,
+                            "story": star.story
                         }
                     };
                     let block = new BlockClass.Block(starData);
@@ -261,20 +262,18 @@ class Blockchain {
             let height = self.height;
             let block = self.chain[height];
             console.log('validating blockchain');
-            for (;height > 0;) {
-                console.log(`block #${height}`);
-                console.log(`hash: ${block.hash}`);
-                console.log(`previous block hash: ${block.previousBlockHash}`);
-                block.validate().then (
+            for (const b of self.chain.reverse()) {
+                console.log(`validating: ${b.height}`);
+                await b.validate().then (
                     function(val) { 
-                        console.log(`okay(${height})`); 
-                        console.log(errorLog);
+                        console.log('okay')
+                        errorLog[errorLog.length] = b.height;
                     },
-                    function(err) { console.log("nokay"); }
+                    function(err) { console.log('nokay')}
                 );
-                height -= 1;
-                block = self.chain[height];
+                console.log(errorLog);
             }
+            console.log(self.chain);
             resolve();
         });
     }
