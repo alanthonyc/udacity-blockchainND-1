@@ -267,14 +267,16 @@ class Blockchain {
                 await b.validate().then (
                     function(val) { 
                         console.log('okay')
-                        errorLog[errorLog.length] = b.height;
                     },
-                    function(err) { console.log('nokay')}
+                    function(err) {
+                        console.log('nokay')
+                        errorLog[errorLog.length] = b.height;
+                    }
                 );
-                console.log(errorLog);
             }
-            console.log(self.chain);
-            resolve();
+            console.log(`Errors found: ${errorLog.length}`);
+            console.log(errorLog);
+            resolve(errorLog);
         });
     }
 
