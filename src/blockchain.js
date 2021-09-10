@@ -260,17 +260,25 @@ class Blockchain {
         return new Promise(async (resolve, reject) => {
             let error = false;
             let height = self.height;
-            let block = self.chain[height];
+            let previousBackHash = self.chain[height].hash;
             console.log('validating blockchain');
             for (const b of self.chain.reverse()) {
                 console.log(`validating: ${b.height}`);
+                if ((previousBackHash === b.hash)) {
+                    errorLog[errorLog.length] = `Block ${b.height} - Chain Broken Error`;
+                } else {
+                    console.log('chain link correct:');
+                    console.log(`previous: ${previousBackHash}`);
+                    console.log(`current: ${b.hash}`);
+                }
+                previousBackHash = b.previousBlockHash;
                 await b.validate().then (
                     function(val) { 
                         console.log('okay')
                     },
                     function(err) {
                         console.log('nokay')
-                        errorLog[errorLog.length] = b.height;
+                        errorLog[errorLog.length] = `Block ${b.height} - Block Validation Error`;
                     }
                 );
             }
