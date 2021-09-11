@@ -82,6 +82,9 @@ class Blockchain {
             block.time = new Date().getTime().toString().slice(0,-3);
             self.chain[self.chain.length] = block;
             self.height = block.height;
+            if (self.height > 0) {
+                self.validateChain();
+            }
             if (error) {
                 reject();
             } else {
@@ -188,7 +191,6 @@ class Blockchain {
                 }
             }
             console.log('tried all blocks');
-            self.validateChain();//temp
             if (!error && found) {
                 resolve(block);
             } else {
@@ -259,25 +261,37 @@ class Blockchain {
         let errorLog = [];
         return new Promise(async (resolve, reject) => {
             let error = false;
-            let height = self.height;
-            let previousBackHash = self.chain[height].hash;
-            console.log('validating blockchain');
-            for (const b of self.chain.reverse()) {
-                console.log(`validating: ${b.height}`);
-                if ((previousBackHash === b.hash)) {
-                    errorLog[errorLog.length] = `Block ${b.height} - Chain Broken Error`;
+
+            // Validate Chain Links 
+            let h = self.height - 1;
+            let b = self.chain[h];
+            for (;h > 0;) {
+                console.log('Looping through chain...');
+                console.log(`Block Height: ${b.height}`);
+                console.log(`Block Hash: ${b.hash}`);
+                console.log(`Block Prev: ${b.previousBlockHash}`);
+                if (b.height > 1) {
+                    if (!(b.previousBlockHash === self.chain[b.height-1].hash)) {
+                        console.log(`Chain Error - Prev Block: ${self.chain[b.height-1].hash}`);
+                        error = true;
+                        errorLog[errorLog.length] = `Chain Link Error: Block ${h}, Prev ${b.previousBlockHash}`;
+                    }
                 } else {
-                    console.log('chain link correct:');
-                    console.log(`previous: ${previousBackHash}`);
-                    console.log(`current: ${b.hash}`);
+                    console.log('Last Block, no Previous');
                 }
-                previousBackHash = b.previousBlockHash;
+                h -= 1;
+                b = self.chain[h];
+            }
+
+            // Validate Each Block
+            for (const b of self.chain.reverse()) {
                 await b.validate().then (
                     function(val) { 
                         console.log('okay')
                     },
                     function(err) {
                         console.log('nokay')
+                        error = true;
                         errorLog[errorLog.length] = `Block ${b.height} - Block Validation Error`;
                     }
                 );
@@ -287,7 +301,6 @@ class Blockchain {
             resolve(errorLog);
         });
     }
-
 }
 
 module.exports.Blockchain = Blockchain;   

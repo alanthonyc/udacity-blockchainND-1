@@ -39,6 +39,15 @@ class Block {
         let self = this;
         return new Promise((resolve, reject) => {
             // Save in auxiliary variable the current block hash
+            //console.log('testing reviewer code snippet for validate');
+            //let test = SHA256(JSON.stringify(
+           //     {
+            //        ...self,
+           //         "hash":null
+            //    }
+            //)).toString();
+            //console.log(test);
+
             let current_hash = self.hash;
                                             
             // Recalculate the hash of the Block
