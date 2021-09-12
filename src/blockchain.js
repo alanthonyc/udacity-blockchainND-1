@@ -65,10 +65,11 @@ class Blockchain {
      * that this method is a private method. 
      */
     _addBlock(block) {
-        let self = this; // `this` is the blockchain, not the block
+        let self = this;
         return new Promise(async (resolve, reject) => {
+            console.log("=====================\nAdding block");
             let error = false;
-            // 0 - check for genesis block (height == 0)
+            // 0 - check for genesis block (height < 0)
             if (self.height == -1) { // Genesis Block
                 block.height = 0;
                 // previousBlockHash is null
@@ -77,15 +78,21 @@ class Blockchain {
                 block.height = self.height + 1;
                 block.previousBlockHash = self.chain[self.height].hash;
             }
-            console.log(`adding block, body:\n${block.body}`);
+            console.log(`chain height was ${self.height}`);
+            self.height = block.height;
+            console.log(`adding block ${block.height}, body:\n${block.body}`);
             block.hash = SHA256(JSON.stringify(block.body)).toString();
             block.time = new Date().getTime().toString().slice(0,-3);
-            self.chain[self.chain.length] = block;
-            self.height = block.height;
+            self.chain[self.height] = block;
+            console.log(`chain height is now ${self.height}`);
+            console.log(this);
+            console.log(this.chain.sort(function(a,b){return a.height-b.height}));
+            console.log("=====================");
+            let errorLog = [];
             if (self.height > 0) {
-                self.validateChain();
+                errorLog = await self.validateChain();
             }
-            if (error) {
+            if (errorLog && errorLog.length) {
                 reject();
             } else {
                 resolve(block);
@@ -133,6 +140,7 @@ class Blockchain {
     submitStar(address, message, signature, star) {
         let self = this;
         return new Promise(async (resolve, reject) => {
+            console.log("******************\nAdding star block...");
             let error = false;
             let errMessage = "";
             let msg_time = parseInt(message.split(':')[1]);
@@ -155,14 +163,14 @@ class Blockchain {
                         }
                     };
                     let block = new BlockClass.Block(starData);
-                    self._addBlock(block);
-                    console.log(`Adding block: ${self.height}`);
+                    await self._addBlock(block);
+                    console.log(`Added star block: ${self.height}`);
                     resolve(block);
-                    console.log(block);
                 } else {
                     errMessage = "Message failed verification.";
                     reject(errMessage);
                 }
+                console.log("Added star block.\n******************");
             }
         });
     }
@@ -264,23 +272,21 @@ class Blockchain {
 
             // Validate Chain Links 
             let h = self.height - 1;
-            let b = self.chain[h];
-            for (;h > 0;) {
+            for (const b of self.chain.sort(function(a,b){return b.height-a.height})) {
                 console.log('Looping through chain...');
                 console.log(`Block Height: ${b.height}`);
                 console.log(`Block Hash: ${b.hash}`);
                 console.log(`Block Prev: ${b.previousBlockHash}`);
                 if (b.height > 1) {
-                    if (!(b.previousBlockHash === self.chain[b.height-1].hash)) {
-                        console.log(`Chain Error - Prev Block: ${self.chain[b.height-1].hash}`);
+                    let p = await self.getBlockByHeight(b.height-1);
+                    if (!(b.previousBlockHash === p.hash)) {
+                        console.log(`Chain Error - Block ${b.height}`);
                         error = true;
-                        errorLog[errorLog.length] = `Chain Link Error: Block ${h}, Prev ${b.previousBlockHash}`;
+                        errorLog[errorLog.length] = `Chain Link Error: Block ${b.height}, Prev ${b.previousBlockHash}\n}`;
                     }
                 } else {
                     console.log('Last Block, no Previous');
                 }
-                h -= 1;
-                b = self.chain[h];
             }
 
             // Validate Each Block
