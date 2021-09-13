@@ -148,7 +148,7 @@ class Blockchain {
             let msg_time = parseInt(message.split(':')[1]);
             let current_time = parseInt(new Date().getTime().toString().slice(0, -3));
             let elapsed_time = current_time - msg_time;
-            if (elapsed_time > 300000000000000) {
+            if (elapsed_time > 300) {
                 error = true;
                 errMessage = "Timeout";
                 reject(errMessage);
