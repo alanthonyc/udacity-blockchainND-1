@@ -38,20 +38,10 @@ class Block {
     validate() {
         let self = this;
         return new Promise((resolve, reject) => {
-            // Save in auxiliary variable the current block hash
-            //console.log('testing reviewer code snippet for validate');
-            //let test = SHA256(JSON.stringify(
-           //     {
-            //        ...self,
-           //         "hash":null
-            //    }
-            //)).toString();
-            //console.log(test);
-
             let current_hash = self.hash;
-                                            
-            // Recalculate the hash of the Block
-            let recalculated_hash = SHA256(JSON.stringify(self.body)).toString();
+            self.hash = null;
+            let recalculated_hash = SHA256(JSON.stringify(self)).toString();
+            self.hash = current_hash;
 
             // Comparing if the hashes changed
             if (current_hash === recalculated_hash) {
@@ -60,6 +50,9 @@ class Block {
             } else {
                 // Returning the Block is valid
                 resolve(false);
+                console.log('==================\nBlock Hash Validation Failed');
+                console.log(`Calculated Hash: ${recalculated_hash}`);
+                console.log(`Current Hash: ${current_hash}`);
             }
         });
     }
@@ -89,7 +82,6 @@ class Block {
             resolve(body_data);
         });
     }
-
 }
 
 module.exports.Block = Block;                    // Exposing the Block class as a module

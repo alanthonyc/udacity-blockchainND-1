@@ -81,9 +81,11 @@ class Blockchain {
             console.log(`chain height was ${self.height}`);
             self.height = block.height;
             console.log(`adding block ${block.height}, body:\n${block.body}`);
-            block.hash = SHA256(JSON.stringify(block.body)).toString();
             block.time = new Date().getTime().toString().slice(0,-3);
+
+            block.hash = self.calculateHashForBlock(block);
             self.chain[self.height] = block;
+
             console.log(`chain height is now ${self.height}`);
             console.log(this);
             console.log(this.chain.sort(function(a,b){return a.height-b.height}));
@@ -146,7 +148,7 @@ class Blockchain {
             let msg_time = parseInt(message.split(':')[1]);
             let current_time = parseInt(new Date().getTime().toString().slice(0, -3));
             let elapsed_time = current_time - msg_time;
-            if (elapsed_time > 300) {
+            if (elapsed_time > 300000000000000) {
                 error = true;
                 errMessage = "Timeout";
                 reject(errMessage);
@@ -306,6 +308,16 @@ class Blockchain {
             console.log(errorLog);
             resolve(errorLog);
         });
+    }
+
+    // Auxiliary method to calculate a block's hash.
+    //  - set block.hash to null
+    //  - run the block through SHA256
+    calculateHashForBlock(block) {
+        block.hash = null;
+        let blockHash = SHA256(JSON.stringify(block)).toString();
+        console.log(`Calculated Hash: ${blockHash}`);
+        return blockHash;
     }
 }
 
